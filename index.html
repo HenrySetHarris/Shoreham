@@ -2563,7 +2563,13 @@
 
         // --- 3. APP ENGINE ---
         const map = L.map('map').setView(yardCenter, 16);
+// Alert the user if their GPS is off
+map.on('locationerror', function(e) {
+    alert("Location access denied or disabled. Please enable Location Services in your phone settings to see your position.");
+});
 
+// continually watch the position
+map.locate({setView: false, watch: true, enableHighAccuracy: true});
         // Satellite Layer
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri',
@@ -2571,7 +2577,6 @@
         }).addTo(map);
 
         // GPS Blue Dot
-        map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true});
 
         function onLocationFound(e) {
             const radius = e.accuracy / 2;
@@ -2617,6 +2622,7 @@
     </script>
 </body>
 </html>
+
 
 
 
