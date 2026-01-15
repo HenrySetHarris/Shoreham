@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Shoreham Yard Map</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        body { margin: 0; padding: 0; background: #202020; }
+        #map { height: 100vh; width: 100%; }
+        
+        .section-label {
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #000;
+            border-radius: 4px;
+            color: #000;
+            font-weight: 800;
+            font-size: 14px;
+            text-align: center;
+            padding: 2px 6px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // --- 1. CONFIGURATION ---
+        const yardCenter = [45.029, -93.265]; // Centered on Shoreham Yard
+
+        // --- 2. YOUR DATA ---
+        // Open your .geojson file with Notepad. Copy EVERYTHING inside it.
+        // Paste it below to replace the empty object {}.
+        const yardData = { 
+            /* PASTE YOUR GEOJSON CONTENT HERE */ 
+        };
+
+        // --- 3. APP ENGINE ---
+        const map = L.map('map').setView(yardCenter, 16);
+
+        // Satellite Layer
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Tiles &copy; Esri',
+            maxZoom: 19
+        }).addTo(map);
+
+        // GPS Blue Dot
+        map.locate({setView: true, maxZoom: 18, watch: true, enableHighAccuracy: true});
+
+        function onLocationFound(e) {
+            const radius = e.accuracy / 2;
+            if (window.userMarker) {
+                window.userMarker.setLatLng(e.latlng);
+                window.userAccuracy.setLatLng(e.latlng);
+                window.userAccuracy.setRadius(radius);
+            } else {
+                window.userMarker = L.marker(e.latlng).addTo(map)
+                    .bindPopup("You").openPopup();
+                window.userAccuracy = L.circle(e.latlng, radius).addTo(map);
+            }
+        }
+        
+        function onLocationError(e) { console.log(e.message); }
+        map.on('locationfound', onLocationFound);
+        map.on('locationerror', onLocationError);
+
+        // --- 4. DRAWING THE SECTIONS (With Auto-Correction) ---
+        let zoneCounter = 1;
+
+        L.geoJSON(yardData, {
+            style: function(feature) {
+                return { color: "#ff0000", weight: 2, fillOpacity: 0.3 };
+            },
+            onEachFeature: function(feature, layer) {
+                // If you named it in the file, use that. If not, use "Zone X"
+                let labelText = feature.properties.name || ("Zone " + zoneCounter++);
+                
+                // Add the visible label
+                if (layer.getBounds) {
+                    const center = layer.getBounds().getCenter();
+                    const labelIcon = L.divIcon({
+                        className: 'section-label',
+                        html: labelText,
+                        iconSize: null
+                    });
+                    L.marker(center, { icon: labelIcon, interactive: false }).addTo(map);
+                }
+            }
+        }).addTo(map);
+
+    </script>
+</body>
+</html>
