@@ -32,7 +32,7 @@
 
     <script>
         // --- 1. CONFIGURATION ---
-        const yardCenter = [45.029, -93.265]; // Centered on Shoreham Yard
+        const yardCenter = [45.0226, -93.2642]; // Centered on Shoreham Yard
 
         // --- 2. YOUR DATA ---
         // Open your .geojson file with Notepad. Copy EVERYTHING inside it.
@@ -2238,7 +2238,7 @@
 
         L.geoJSON(yardData, {
             style: function(feature) {
-                return { color: "#ff0000", weight: 2, fillOpacity: 0.3 };
+                return { color: "#333333", weight: 2, fillOpacity: 0.5 };
             },
             onEachFeature: function(feature, layer) {
                 // If you named it in the file, use that. If not, use "Zone X"
@@ -2260,4 +2260,5 @@
     </script>
 </body>
 </html>
+
 
