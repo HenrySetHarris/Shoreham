@@ -2625,8 +2625,8 @@
 
 // --- 3. APP ENGINE ---
 
-// 1. Start Map
-const map = L.map('map').setView(yardCenter, 17);
+// 1. Start Map (Zoom 16.5)
+const map = L.map('map', { zoomSnap: 0.5 }).setView(yardCenter, 16.5);
 
 // 2. Add Satellite Layer
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -2635,7 +2635,6 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/
 
 // 3. Add Zones (Hybrid Labeling System)
 L.geoJSON(yardData, {
-    // A. Style the Polygons (Grey with White Border)
     style: function(feature) {
         return { 
             color: "#ffffff", 
@@ -2644,22 +2643,18 @@ L.geoJSON(yardData, {
             fillOpacity: 0.4 
         };
     },
-
-    // B. Handle "Invisible Pins" (For manual label placement)
     pointToLayer: function(feature, latlng) {
         return L.circleMarker(latlng, {
             radius: 0,      // Invisible dot
-            opacity: 0,     // Invisible rim
-            fillOpacity: 0  // Invisible fill
+            opacity: 0,
+            fillOpacity: 0
         });
     },
-
-    // C. Attach Labels to Everything
     onEachFeature: function(feature, layer) {
         if (feature.properties && feature.properties.name) {
             layer.bindTooltip(feature.properties.name, {
-                permanent: true,      // Always visible
-                direction: "center",  // Dead center of the shape/dot
+                permanent: true,
+                direction: "center",
                 className: "zone-label"
             }).openTooltip();
         }
@@ -2668,20 +2663,24 @@ L.geoJSON(yardData, {
 
 // 4. Hours of Operation Box
 var infoControl = L.control({position: 'bottomleft'});
+
 infoControl.onAdd = function (map) {
     var div = L.DomUtil.create('div', 'info-box');
     div.innerHTML = `
         <strong>SHOREHAM YARD</strong><br>
         Check-In: 24/7<br>
-        Lift Ops: 06:00 - 22:00<br>
-        Info: Channel 4
+        Lift Ops (M-F): 06:00 - 22:00<br>
+        Lift Ops (S-S): 06:00 - 18:00<br>
+        Depot (M-F): 06:00 - 18:00
     `;
     return div;
 };
+
 infoControl.addTo(map);
 
 // 5. User Location Dot
 map.locate({setView: true, maxZoom: 17, watch: true});
+
 function onLocationFound(e) {
     L.circleMarker(e.latlng, {
         color: '#2A93EE',
@@ -2690,10 +2689,12 @@ function onLocationFound(e) {
         radius: 8
     }).addTo(map).bindPopup("You are here").openPopup();
 }
+
 map.on('locationfound', onLocationFound);
 </script>
 </body>
 </html>
+
 
 
 
