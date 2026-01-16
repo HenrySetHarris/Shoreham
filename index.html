@@ -2623,65 +2623,65 @@
 }
 ;
 
-        // --- 3. APP ENGINE ---
+// --- 3. APP ENGINE ---
 
-// 1. Start Map (Zoomed in to 17)
+// 1. Start Map
 const map = L.map('map').setView(yardCenter, 17);
 
-// 2. Add the Satellite Layer
+// 2. Add Satellite Layer
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Tiles &copy; Esri'
 }).addTo(map);
 
-// 3. Add the Zones (Grey with White Border + Top-Right Labels)
+// 3. Add Zones (Hybrid Labeling System)
 L.geoJSON(yardData, {
+    // A. Style the Polygons (Grey with White Border)
     style: function(feature) {
         return { 
-            color: "#ffffff",     // White border
-            weight: 1,            // Thin line
-            fillColor: "#333333", // Dark Grey fill
-            fillOpacity: 0.4      // See-through
+            color: "#ffffff", 
+            weight: 1, 
+            fillColor: "#333333", 
+            fillOpacity: 0.4 
         };
     },
-    onEachFeature: function(feature, layer) {
-        // Only if the zone has a name
-        if (feature.properties && feature.properties.name) {
-            
-            // Snap Label to Top-Right (North-East) Corner
-            var labelPos = layer.getBounds().getNorthEast();
 
-            L.tooltip({
-                permanent: true,
-                direction: "center",
+    // B. Handle "Invisible Pins" (For manual label placement)
+    pointToLayer: function(feature, latlng) {
+        return L.circleMarker(latlng, {
+            radius: 0,      // Invisible dot
+            opacity: 0,     // Invisible rim
+            fillOpacity: 0  // Invisible fill
+        });
+    },
+
+    // C. Attach Labels to Everything
+    onEachFeature: function(feature, layer) {
+        if (feature.properties && feature.properties.name) {
+            layer.bindTooltip(feature.properties.name, {
+                permanent: true,      // Always visible
+                direction: "center",  // Dead center of the shape/dot
                 className: "zone-label"
-            })
-            .setContent(feature.properties.name)
-            .setLatLng(labelPos)
-            .addTo(map);
+            }).openTooltip();
         }
     }
 }).addTo(map);
 
-// 4. Add "Hours of Operation" Box (Bottom Left)
+// 4. Hours of Operation Box
 var infoControl = L.control({position: 'bottomleft'});
-
 infoControl.onAdd = function (map) {
     var div = L.DomUtil.create('div', 'info-box');
-    // EDIT THE TEXT BELOW TO MATCH YOUR REAL HOURS
     div.innerHTML = `
         <strong>SHOREHAM YARD</strong><br>
         Check-In: 24/7<br>
         Lift Ops: 06:00 - 22:00<br>
         Help: Channel 4
-    `; 
+    `;
     return div;
 };
-
 infoControl.addTo(map);
 
-// 5. Add Blue "You Are Here" Dot
+// 5. User Location Dot
 map.locate({setView: true, maxZoom: 17, watch: true});
-
 function onLocationFound(e) {
     L.circleMarker(e.latlng, {
         color: '#2A93EE',
@@ -2690,12 +2690,11 @@ function onLocationFound(e) {
         radius: 8
     }).addTo(map).bindPopup("You are here").openPopup();
 }
-
 map.on('locationfound', onLocationFound);
-
 </script>
 </body>
 </html>
+
 
 
 
