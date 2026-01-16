@@ -2627,7 +2627,7 @@
 // --- 3. APP ENGINE ---
 
 // 1. Start Map (Zoom 16.5)
-const map = L.map('map', { zoomSnap: 0.5 }).setView(yardCenter, 15.5);
+const map = L.map('map', { zoomSnap: 0.25 }).setView(yardCenter, 15.25);
 
 // 2. Add Satellite Layer
 L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -2695,3 +2695,4 @@ map.on('locationfound', onLocationFound);
 </script>
 </body>
 </html>
+
