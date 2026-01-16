@@ -8,21 +8,41 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
-        body { margin: 0; padding: 0; background: #202020; }
-        #map { height: 100vh; width: 100%; }
-        
-        .section-label {
-            background: rgba(255, 255, 255, 0.9);
-            border: 2px solid #000;
-            border-radius: 4px;
-            color: #000;
-            font-weight: 800;
-            font-size: 14px;
-            text-align: center;
-            padding: 2px 6px;
-            white-space: nowrap;
-        }
-    </style>
+    /* 1. Basic Map Setup (Keeps it full screen) */
+    body, html { 
+        height: 100%; 
+        margin: 0; 
+        padding: 0; 
+    }
+    #map { 
+        height: 100%; 
+        width: 100%; 
+    }
+
+    /* 2. Zone Labels (White text with black shadow) */
+    .zone-label {
+        background: transparent;
+        border: none;
+        box-shadow: none;
+        color: #ffffff;
+        font-family: sans-serif;
+        font-weight: 900;   /* Extra bold */
+        font-size: 14px;
+        text-shadow: 2px 2px 0px #000000; /* Hard black shadow */
+    }
+
+    /* 3. The New Info Box (Hours) */
+    .info-box {
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.8); /* Dark background */
+        color: white;
+        border-radius: 5px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        font-family: sans-serif;
+        font-size: 12px;
+        line-height: 1.5em;
+    }
+</style>
 </head>
 <body>
 
@@ -2604,68 +2624,78 @@
 ;
 
         // --- 3. APP ENGINE ---
-        const map = L.map('map').setView(yardCenter, 16);
-// Alert the user if their GPS is off
-map.on('locationerror', function(e) {
-    alert("Location access denied or disabled. Please enable Location Services in your phone settings to see your position.");
-});
 
-// continually watch the position
-map.locate({setView: false, watch: true, enableHighAccuracy: true});
-        // Satellite Layer
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri',
-            maxZoom: 19
-        }).addTo(map);
+// 1. Start Map (Zoomed in to 17)
+const map = L.map('map').setView(yardCenter, 17);
 
-        // GPS Blue Dot
+// 2. Add the Satellite Layer
+L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Tiles &copy; Esri'
+}).addTo(map);
 
-        function onLocationFound(e) {
-            const radius = e.accuracy / 2;
-            if (window.userMarker) {
-                window.userMarker.setLatLng(e.latlng);
-                window.userAccuracy.setLatLng(e.latlng);
-                window.userAccuracy.setRadius(radius);
-            } else {
-                window.userMarker = L.marker(e.latlng).addTo(map)
-                    .bindPopup("You").openPopup();
-                window.userAccuracy = L.circle(e.latlng, radius).addTo(map);
-            }
+// 3. Add the Zones (Grey with White Border + Top-Right Labels)
+L.geoJSON(yardData, {
+    style: function(feature) {
+        return { 
+            color: "#ffffff",     // White border
+            weight: 1,            // Thin line
+            fillColor: "#333333", // Dark Grey fill
+            fillOpacity: 0.4      // See-through
+        };
+    },
+    onEachFeature: function(feature, layer) {
+        // Only if the zone has a name
+        if (feature.properties && feature.properties.name) {
+            
+            // Snap Label to Top-Right (North-East) Corner
+            var labelPos = layer.getBounds().getNorthEast();
+
+            L.tooltip({
+                permanent: true,
+                direction: "center",
+                className: "zone-label"
+            })
+            .setContent(feature.properties.name)
+            .setLatLng(labelPos)
+            .addTo(map);
         }
-        
-        function onLocationError(e) { console.log(e.message); }
-        map.on('locationfound', onLocationFound);
-        map.on('locationerror', onLocationError);
+    }
+}).addTo(map);
 
-        // --- 4. DRAWING THE SECTIONS (With Auto-Correction) ---
-        let zoneCounter = 1;
+// 4. Add "Hours of Operation" Box (Bottom Left)
+var infoControl = L.control({position: 'bottomleft'});
 
-        L.geoJSON(yardData, {
-            style: function(feature) {
-                return { color: "#333333", weight: 2, fillOpacity: 0.5 };
-            },
-            onEachFeature: function(feature, layer) {
-                // If you named it in the file, use that. If not, use "Zone X"
-                let labelText = feature.properties.name || ("Zone " + zoneCounter++);
-                
-                // Add the visible label
-                if (layer.getBounds) {
-                    const center = layer.getBounds().getCenter();
-                    const labelIcon = L.divIcon({
-                        className: 'section-label',
-                        html: labelText,
-                        iconSize: null
-                    });
-                    L.marker(center, { icon: labelIcon, interactive: false }).addTo(map);
-                }
-            }
-        }).addTo(map);
+infoControl.onAdd = function (map) {
+    var div = L.DomUtil.create('div', 'info-box');
+    // EDIT THE TEXT BELOW TO MATCH YOUR REAL HOURS
+    div.innerHTML = `
+        <strong>SHOREHAM YARD</strong><br>
+        Check-In: 24/7<br>
+        Lift Ops: 06:00 - 22:00<br>
+        Help: Channel 4
+    `; 
+    return div;
+};
 
-    </script>
+infoControl.addTo(map);
+
+// 5. Add Blue "You Are Here" Dot
+map.locate({setView: true, maxZoom: 17, watch: true});
+
+function onLocationFound(e) {
+    L.circleMarker(e.latlng, {
+        color: '#2A93EE',
+        fillColor: '#2A93EE',
+        fillOpacity: 1,
+        radius: 8
+    }).addTo(map).bindPopup("You are here").openPopup();
+}
+
+map.on('locationfound', onLocationFound);
+
+</script>
 </body>
 </html>
-
-
 
 
 
